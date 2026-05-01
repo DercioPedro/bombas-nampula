@@ -98,6 +98,12 @@
             transform: translateY(-2px);
         }
 
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: wait;
+            transform: none;
+        }
+
         .btn-filter {
             background: white;
             color: #666;
@@ -479,7 +485,7 @@
                     </select>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Adicionar Posto</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Adicionar Posto</button>
                     <button type="button" class="btn" onclick="closeAddModal()">Cancelar</button>
                 </div>
             </form>
@@ -692,6 +698,12 @@
             const gasoline = document.getElementById('gasolineStatus').value;
             const diesel = document.getElementById('dieselStatus').value;
             const photoFile = document.getElementById('stationPhoto').files[0];
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.textContent;
+            
+            // Desabilitar botao e mostrar aguarde
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Aguarde...';
             
             let photoBase64 = null;
             if (photoFile) {
@@ -710,13 +722,17 @@
                     closeAddModal();
                     document.getElementById('addStationForm').reset();
                     document.getElementById('photoPreview').classList.remove('show');
-                    // alert('Posto adicionado com sucesso!');
+                    // Sem alert - apenas sucesso silencioso
                 } else {
-                    // alert('Erro ao adicionar posto.');
+                    alert('Erro ao adicionar posto.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Erro de conexao.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         }
 
@@ -761,6 +777,10 @@
             document.getElementById('addModal').style.display = 'none';
             document.getElementById('addStationForm').reset();
             document.getElementById('photoPreview').classList.remove('show');
+            // Resetar botao se estiver desabilitado
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Adicionar Posto';
         }
         
         document.getElementById('addStationForm').addEventListener('submit', addStation);
