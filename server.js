@@ -16,7 +16,8 @@ const supabase = createClient(
     process.env.SUPABASE_ANON_KEY
 );
 
-// Funcao para calcular status baseado nos reports recentes
+// No server.js, atualize a função calculateFuelStatus para retornar também a contagem de votos:
+
 async function calculateFuelStatus(stationId, fuelType) {
     try {
         const { data: reports, error } = await supabase
@@ -24,35 +25,34 @@ async function calculateFuelStatus(stationId, fuelType) {
             .select('status')
             .eq('station_id', stationId)
             .eq('fuel_type', fuelType)
-            .order('created_at', { ascending: false })
-            .limit(10);
+            .order('created_at', { ascending: false });
         
         if (error || !reports || reports.length === 0) {
-            return 'available';
+            return { status: 'available', availableVotes: 0, unavailableVotes: 0 };
         }
         
-        const statusCount = {
-            available: 0,
-            busy: 0,
-            unavailable: 0
-        };
+        let availableVotes = 0;
+        let unavailableVotes = 0;
         
         reports.forEach(report => {
-            if (report.status === 'available') statusCount.available++;
-            else if (report.status === 'busy') statusCount.busy++;
-            else if (report.status === 'unavailable') statusCount.unavailable++;
+            if (report.status === 'available') {
+                availableVotes++;
+            } else {
+                unavailableVotes++;
+            }
         });
         
-        if (statusCount.available >= statusCount.busy && statusCount.available >= statusCount.unavailable) {
-            return 'available';
-        } else if (statusCount.busy >= statusCount.available && statusCount.busy >= statusCount.unavailable) {
-            return 'busy';
-        } else {
-            return 'unavailable';
-        }
+        // O status é decidido pela maioria dos votos
+        const status = availableVotes >= unavailableVotes ? 'available' : 'unavailable';
+        
+        return { 
+            status, 
+            availableVotes, 
+            unavailableVotes 
+        };
     } catch (error) {
         console.error('Error calculating fuel status:', error);
-        return 'available';
+        return { status: 'available', availableVotes: 0, unavailableVotes: 0 };
     }
 }
 
@@ -79,6 +79,20 @@ app.get('/api/stations', async (req, res) => {
             // Buscar status atual para Gasolina e Diesel
             const gasolineStatus = await calculateFuelStatus(station.id, 'gasoline');
             const dieselStatus = await calculateFuelStatus(station.id, 'diesel');
+
+            return {
+    id: station.id,
+    name: station.name,
+    location: station.location,
+    status: (gasolineData.status === 'available' || dieselData.status === 'available') ? 'available' : 'unavailable',
+    gasoline: gasolineData.status,
+    diesel: dieselData.status,
+    gasolineAvailableVotes: gasolineData.availableVotes,
+    gasolineUnavailableVotes: gasolineData.unavailableVotes,
+    dieselAvailableVotes: dieselData.availableVotes,
+    dieselUnavailableVotes: dieselData.unavailableVotes,
+    // ... resto
+};
             
             // Buscar todos os reports para contar confirmacoes
             const { data: reports, error: reportsError } = await supabase
