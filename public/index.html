@@ -214,22 +214,11 @@
             color: #dc2626;
         }
 
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 12px 0;
-            padding: 10px 0;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .confirmations {
-            color: #48bb78;
-            font-weight: bold;
-        }
-
         .last-update {
             color: #999;
             font-size: 0.85rem;
+            text-align: center;
+            margin: 10px 0;
         }
 
         .card-actions {
@@ -249,6 +238,7 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 0.85rem;
+            transition: all 0.2s ease;
         }
 
         .btn-diesel {
@@ -261,9 +251,17 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 0.85rem;
+            transition: all 0.2s ease;
         }
 
-        button:hover {
+        .btn-gasoline:disabled,
+        .btn-diesel:disabled {
+            opacity: 0.6;
+            cursor: wait;
+            transform: none;
+        }
+
+        button:hover:not(:disabled) {
             opacity: 0.9;
             transform: scale(1.02);
         }
@@ -430,6 +428,7 @@
         let stations = [];
         let currentFilter = 'all';
         let currentFuelType = 'all';
+        let disabledButtons = new Map();
 
         async function fetchStations() {
             try {
@@ -440,7 +439,7 @@
                 renderStations();
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('stationsGrid').innerHTML = '<div class="empty-state">Erro ao carregar postos.</div>';
+                document.getElementById('stationsGrid').innerHTML = '<div class="empty-state">Erro ao carregar postos. Verifique sua conexao.</div>';
             }
         }
 
@@ -524,7 +523,7 @@
                 const dieselClass = getStatusClass(station.diesel);
                 
                 return `
-                    <div class="card">
+                    <div class="card" data-id="${station.id}">
                         <div class="card-header">
                             <div>
                                 <div class="station-name">${escapeHtml(station.name)}</div>
@@ -548,19 +547,27 @@
                         </div>
                         
                         <div class="card-actions">
-                            <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'available')">
-                               Clique para Marcar Gasolina Disponivel
+                            <button class="btn-gasoline" 
+                                onclick="reportFuel(${station.id}, 'gasoline', 'available', this)"
+                                ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'disabled' : ''}>
+                                ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'Aguarde...' : 'Marcar Gasolina Disponivel'}
                             </button>
-                            <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'unavailable')">
-                                Clique para Marcar Gasolina Indisponivel
+                            <button class="btn-gasoline" 
+                                onclick="reportFuel(${station.id}, 'gasoline', 'unavailable', this)"
+                                ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'disabled' : ''}>
+                                ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'Aguarde...' : 'Marcar Gasolina Indisponivel'}
                             </button>
                         </div>
                         <div class="card-actions">
-                            <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'available')">
-                               Clique para Marcar Diesel Disponivel
+                            <button class="btn-diesel" 
+                                onclick="reportFuel(${station.id}, 'diesel', 'available', this)"
+                                ${disabledButtons.has(`diesel-${station.id}-available`) ? 'disabled' : ''}>
+                                ${disabledButtons.has(`diesel-${station.id}-available`) ? 'Aguarde...' : 'Marcar Diesel Disponivel'}
                             </button>
-                            <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'unavailable')">
-                               Clique para Marcar Diesel Indisponivel
+                            <button class="btn-diesel" 
+                                onclick="reportFuel(${station.id}, 'diesel', 'unavailable', this)"
+                                ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'disabled' : ''}>
+                                ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'Aguarde...' : 'Marcar Diesel Indisponivel'}
                             </button>
                         </div>
                     </div>
@@ -568,7 +575,14 @@
             }).join('');
         }
 
-        async function reportFuel(stationId, fuelType, status) {
+        async function reportFuel(stationId, fuelType, status, buttonElement) {
+            const buttonKey = `${fuelType}-${stationId}-${status}`;
+            
+            if (disabledButtons.has(buttonKey)) return;
+            
+            disabledButtons.set(buttonKey, true);
+            renderStations();
+            
             try {
                 const response = await fetch(`${API_URL}/stations/${stationId}/report-fuel`, {
                     method: 'POST',
@@ -578,15 +592,15 @@
                 
                 if (response.ok) {
                     await fetchStations();
-                    const fuelName = fuelType === 'gasoline' ? 'Gasolina' : 'Diesel';
-                    const statusText = status === 'available' ? 'Disponivel' : 'Indisponivel';
-                    showNotification(`${fuelName} marcado como ${statusText}!`, 'success');
                 } else {
-                    showNotification('Erro ao atualizar', 'error');
+                    alert('Erro ao atualizar. Tente novamente.');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showNotification('Erro de conexao', 'error');
+                alert('Erro de conexao. Tente novamente.');
+            } finally {
+                disabledButtons.delete(buttonKey);
+                renderStations();
             }
         }
 
@@ -609,13 +623,13 @@
                     await fetchStations();
                     closeAddModal();
                     document.getElementById('addStationForm').reset();
-                    showNotification('Posto adicionado!', 'success');
+                    alert('Posto adicionado com sucesso!');
                 } else {
-                    showNotification('Erro ao adicionar', 'error');
+                    alert('Erro ao adicionar posto.');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showNotification('Erro de conexao', 'error');
+                alert('Erro de conexao.');
             }
         }
 
@@ -650,40 +664,6 @@
         function closeAddModal() {
             document.getElementById('addModal').style.display = 'none';
         }
-        
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background: ${type === 'success' ? '#16a34a' : '#dc2626'};
-                color: white;
-                padding: 15px 25px;
-                border-radius: 10px;
-                z-index: 1001;
-                animation: slideIn 0.3s ease;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            `;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
-        }
-
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-        `;
-        document.head.appendChild(style);
         
         document.getElementById('addStationForm').addEventListener('submit', addStation);
         
