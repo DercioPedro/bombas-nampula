@@ -1,0 +1,76 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <link rel="stylesheet" href="index.css">
+    <title>Bombas Nampula - Monitoramento Colaborativo de Combustível</title>
+
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Bombas Nampula</h1>
+            <p class="subtitle">Monitoramento Colaborativo de Combustível - Ajude a comunidade encontrando combustível rapidamente!</p>
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalStations">0</div>
+                    <div class="stat-label">Total de Postos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="availableStations">0</div>
+                    <div class="stat-label">Com Combustível</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalReports">0</div>
+                    <div class="stat-label">Total de Reportes</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="openAddModal()">➕ Adicionar Bomba</button>
+            <button class="btn btn-filter active" onclick="filterStations('all')" data-filter="all">Todos</button>
+            <button class="btn btn-filter" onclick="filterStations('available')" data-filter="available">Disponível</button>
+            <button class="btn btn-filter" onclick="filterStations('busy')" data-filter="busy">Lotado</button>
+            <button class="btn btn-filter" onclick="filterStations('unavailable')" data-filter="unavailable">Sem Combustível</button>
+        </div>
+
+        <div id="stationsGrid" class="stations-grid">
+            <div class="loading">Carregando postos de combustível...</div>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Bomba -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h2>➕ Adicionar Novo Posto</h2>
+            <form id="addStationForm">
+                <div class="form-group">
+                    <label>Nome do Posto *</label>
+                    <input type="text" id="stationName" required placeholder="Ex: Petromoc Nampula">
+                </div>
+                <div class="form-group">
+                    <label>Localização *</label>
+                    <input type="text" id="stationLocation" required placeholder="Ex: Centro, Av. Eduardo Mondlane">
+                </div>
+                <div class="form-group">
+                    <label>Status Inicial</label>
+                    <select id="initialStatus">
+                        <option value="available">Disponível</option>
+                        <option value="busy">Lotado</option>
+                        <option value="unavailable">Sem Combustível</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Adicionar Posto</button>
+                    <button type="button" class="btn" onclick="closeAddModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
