@@ -398,7 +398,7 @@
             <button class="btn btn-primary" onclick="openAddModal()">Adicionar Posto</button>
             <button class="btn btn-filter active" onclick="filterStations('all')" data-filter="all">Todos</button>
             <button class="btn btn-filter" onclick="filterStations('available')" data-filter="available">Disponivel</button>
-            <button class="btn btn-filter" onclick="filterStations('busy')" data-filter="busy">Lotado</button>
+            <button class="btn btn-filter" onclick="filterStations('busy')" data-filter="busy">Cheio mas acessivel</button>
             <button class="btn btn-filter" onclick="filterStations('unavailable')" data-filter="unavailable">Sem Combustivel</button>
         </div>
 
@@ -424,7 +424,7 @@
                     <label>Gasolina</label>
                     <select id="gasolineStatus">
                         <option value="available">Disponivel</option>
-                        <option value="busy">Lotado/Fila</option>
+                        <option value="busy">Cheio/Fila</option>
                         <option value="unavailable">Indisponivel</option>
                     </select>
                 </div>
@@ -432,7 +432,7 @@
                     <label>Diesel</label>
                     <select id="dieselStatus">
                         <option value="available">Disponivel</option>
-                        <option value="busy">Lotado/Fila</option>
+                        <option value="busy">Cheio/Fila</option>
                         <option value="unavailable">Indisponivel</option>
                     </select>
                 </div>
@@ -481,7 +481,7 @@
         function getStatusText(status) {
             const map = {
                 'available': 'Disponivel',
-                'busy': 'Lotado',
+                'busy': 'Cheio/Fila',
                 'unavailable': 'Indisponivel'
             };
             return map[status] || 'Indisponivel';
@@ -575,18 +575,18 @@
                         
                         <div class="card-actions">
                             <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'available')">
-                                Gasolina Disponivel
+                                Clique para marcar Gasolina Disponivel
                             </button>
                             <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'unavailable')">
-                                Gasolina Indisponivel
+                                Clique para marcar Gasolina Indisponivel
                             </button>
                         </div>
                         <div class="card-actions">
                             <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'available')">
-                                Diesel Disponivel
+                               Clique para marcar Diesel Disponivel
                             </button>
                             <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'unavailable')">
-                                Diesel Indisponivel
+                                Clique para marcar Diesel Indisponivel
                             </button>
                         </div>
                     </div>
