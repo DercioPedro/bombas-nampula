@@ -1,18 +1,361 @@
-<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <link rel="stylesheet" href="index.css">
-    <title>Bombas Nampula - Monitoramento Colaborativo de Combustível</title>
+    <title>Bombas Nampula - Monitoramento Colaborativo de Combustivel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f7f7f7;
+            padding: 15px 25px;
+            border-radius: 15px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.3);
+        }
+
+        .btn-filter {
+            background: white;
+            color: #666;
+        }
+
+        .btn-filter.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .stations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .station-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .station-location {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-available {
+            background: #48bb78;
+            color: white;
+        }
+
+        .status-busy {
+            background: #ecc94b;
+            color: #333;
+        }
+
+        .status-unavailable {
+            background: #f56565;
+            color: white;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 12px 0;
+            padding: 10px 0;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .confirmations {
+            color: #48bb78;
+            font-weight: bold;
+        }
+
+        .last-update {
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-confirm {
+            flex: 1;
+            background: #48bb78;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-confirm:hover {
+            background: #38a169;
+            transform: scale(1.02);
+        }
+
+        .btn-report {
+            flex: 1;
+            background: #f56565;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-report:hover {
+            background: #e53e3e;
+            transform: scale(1.02);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 20px;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .stations-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .card-actions {
+                flex-direction: column;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1> Bombas Nampula</h1>
-            <p class="subtitle">Monitoramento Colaborativo de Combustível - Ajude a comunidade encontrando combustível rapidamente!</p>
+            <h1>Bombas Nampula</h1>
+            <p class="subtitle">Monitoramento Colaborativo de Combustivel - Ajude a comunidade encontrando combustivel rapidamente!</p>
             <div class="stats" id="stats">
                 <div class="stat-card">
                     <div class="stat-value" id="totalStations">0</div>
@@ -20,7 +363,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="availableStations">0</div>
-                    <div class="stat-label">Com Combustível</div>
+                    <div class="stat-label">Com Combustivel</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="totalReports">0</div>
@@ -30,37 +373,37 @@
         </div>
 
         <div class="controls">
-            <button class="btn btn-primary" onclick="openAddModal()">➕ Adicionar Bomba</button>
+            <button class="btn btn-primary" onclick="openAddModal()">Adicionar Bomba</button>
             <button class="btn btn-filter active" onclick="filterStations('all')" data-filter="all">Todos</button>
-            <button class="btn btn-filter" onclick="filterStations('available')" data-filter="available">Disponível</button>
+            <button class="btn btn-filter" onclick="filterStations('available')" data-filter="available">Disponivel</button>
             <button class="btn btn-filter" onclick="filterStations('busy')" data-filter="busy">Lotado</button>
-            <button class="btn btn-filter" onclick="filterStations('unavailable')" data-filter="unavailable">Sem Combustível</button>
+            <button class="btn btn-filter" onclick="filterStations('unavailable')" data-filter="unavailable">Sem Combustivel</button>
         </div>
 
         <div id="stationsGrid" class="stations-grid">
-            <div class="loading">Carregando postos de combustível...</div>
+            <div class="loading">Carregando postos de combustivel...</div>
         </div>
     </div>
 
     <!-- Modal Adicionar Bomba -->
     <div id="addModal" class="modal">
         <div class="modal-content">
-            <h2>➕ Adicionar Novo Posto</h2>
+            <h2>Adicionar Novo Posto</h2>
             <form id="addStationForm">
                 <div class="form-group">
                     <label>Nome do Posto *</label>
                     <input type="text" id="stationName" required placeholder="Ex: Petromoc Nampula">
                 </div>
                 <div class="form-group">
-                    <label>Localização *</label>
+                    <label>Localizacao *</label>
                     <input type="text" id="stationLocation" required placeholder="Ex: Centro, Av. Eduardo Mondlane">
                 </div>
                 <div class="form-group">
                     <label>Status Inicial</label>
                     <select id="initialStatus">
-                        <option value="available">Disponível</option>
+                        <option value="available">Disponivel</option>
                         <option value="busy">Lotado</option>
-                        <option value="unavailable">Sem Combustível</option>
+                        <option value="unavailable">Sem Combustivel</option>
                     </select>
                 </div>
                 <div class="form-actions">
@@ -71,6 +414,245 @@
         </div>
     </div>
 
-    <script src="index.js"></script>
+    <script>
+        // Configuracao
+        const API_URL = window.location.origin + '/api';
+        let stations = [];
+        let currentFilter = 'all';
+
+        // Buscar estacoes da API
+        async function fetchStations() {
+            try {
+                const response = await fetch(`${API_URL}/stations`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                stations = await response.json();
+                updateStats();
+                renderStations();
+            } catch (error) {
+                console.error('Error fetching stations:', error);
+                document.getElementById('stationsGrid').innerHTML = '<div class="empty-state">Erro ao carregar postos. Verifique sua conexao.</div>';
+            }
+        }
+
+        // Atualizar estatisticas
+        function updateStats() {
+            const total = stations.length;
+            const available = stations.filter(s => s.status === 'available').length;
+            const reports = stations.reduce((sum, s) => sum + (s.reportsCount || 0), 0);
+            
+            document.getElementById('totalStations').textContent = total;
+            document.getElementById('availableStations').textContent = available;
+            document.getElementById('totalReports').textContent = reports;
+        }
+
+        // Tempo relativo
+        function getRelativeTime(timestamp) {
+            if (!timestamp) return 'ha poucos instantes';
+            
+            const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
+            
+            if (seconds < 60) return `ha ${seconds} segundos`;
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `ha ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `ha ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+            const days = Math.floor(hours / 24);
+            return `ha ${days} ${days === 1 ? 'dia' : 'dias'}`;
+        }
+
+        // Informacoes do status
+        function getStatusInfo(status) {
+            const statusMap = {
+                available: { text: 'Disponivel', class: 'status-available' },
+                busy: { text: 'Lotado', class: 'status-busy' },
+                unavailable: { text: 'Sem Combustivel', class: 'status-unavailable' }
+            };
+            return statusMap[status] || statusMap.unavailable;
+        }
+
+        // Escapar HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Renderizar estacoes
+        function renderStations() {
+            const grid = document.getElementById('stationsGrid');
+            const filteredStations = currentFilter === 'all' 
+                ? stations 
+                : stations.filter(s => s.status === currentFilter);
+            
+            if (filteredStations.length === 0) {
+                grid.innerHTML = '<div class="empty-state">Nenhum posto encontrado com este filtro.</div>';
+                return;
+            }
+            
+            grid.innerHTML = filteredStations.map(station => {
+                const statusInfo = getStatusInfo(station.status);
+                return `
+                    <div class="card" data-id="${station.id}">
+                        <div class="card-header">
+                            <div>
+                                <div class="station-name">${escapeHtml(station.name)}</div>
+                                <div class="station-location">
+                                    Local: ${escapeHtml(station.location)}
+                                </div>
+                            </div>
+                            <div class="status-badge ${statusInfo.class}">
+                                ${statusInfo.text}
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <span>Confirmacoes:</span>
+                            <span class="confirmations">${station.confirmations || 0}</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Total de reportes:</span>
+                            <span>${station.reportsCount || 0}</span>
+                        </div>
+                        <div class="last-update">
+                            Ultima atualizacao: ${getRelativeTime(station.lastUpdate)}
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-confirm" onclick="reportStatus(${station.id}, 'available')">
+                                Confirmar Disponivel
+                            </button>
+                            <button class="btn-report" onclick="reportStatus(${station.id}, 'unavailable')">
+                                Reportar Indisponivel
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Reportar status
+        async function reportStatus(stationId, status) {
+            try {
+                const response = await fetch(`${API_URL}/stations/${stationId}/report`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                
+                if (response.ok) {
+                    await fetchStations();
+                    showNotification('Reporte registrado com sucesso!', 'success');
+                } else {
+                    showNotification('Erro ao registrar reporte', 'error');
+                }
+            } catch (error) {
+                console.error('Error reporting status:', error);
+                showNotification('Erro ao conectar com o servidor', 'error');
+            }
+        }
+
+        // Adicionar nova estacao
+        async function addStation(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('stationName').value;
+            const location = document.getElementById('stationLocation').value;
+            const status = document.getElementById('initialStatus').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/stations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, location, status })
+                });
+                
+                if (response.ok) {
+                    await fetchStations();
+                    closeAddModal();
+                    document.getElementById('addStationForm').reset();
+                    showNotification('Posto adicionado com sucesso!', 'success');
+                } else {
+                    showNotification('Erro ao adicionar posto', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding station:', error);
+                showNotification('Erro ao conectar com o servidor', 'error');
+            }
+        }
+
+        // Filtrar estacoes
+        function filterStations(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.btn-filter').forEach(btn => {
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            renderStations();
+        }
+
+        // Funcoes do modal
+        function openAddModal() {
+            document.getElementById('addModal').style.display = 'flex';
+        }
+        
+        function closeAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+        }
+        
+        // Notificacao
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#48bb78' : '#f56565'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                z-index: 1001;
+                animation: slideIn 0.3s ease;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Adicionar animacao para notificacao
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Event listeners
+        document.getElementById('addStationForm').addEventListener('submit', addStation);
+        
+        // Fechar modal ao clicar fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('addModal');
+            if (event.target === modal) {
+                closeAddModal();
+            }
+        }
+        
+        // Carregamento inicial
+        fetchStations();
+        
+        // Auto-refresh a cada 2 minutos
+        setInterval(fetchStations, 120000);
+    </script>
 </body>
 </html>
