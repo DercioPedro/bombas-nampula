@@ -549,14 +549,14 @@
                                 <strong>Gasolina:</strong><br>
                                 <span class="${gasolineClass}">${gasolineStatus}</span>
                                 <div style="font-size: 0.75rem; margin-top: 5px;">
-                                    👍 ${gasolineAvailableVotes} | 👎 ${gasolineUnavailableVotes}
+                                     ${gasolineAvailableVotes} |  ${gasolineUnavailableVotes}
                                 </div>
                             </div>
                             <div class="fuel-item fuel-diesel">
                                 <strong>Diesel:</strong><br>
                                 <span class="${dieselClass}">${dieselStatus}</span>
                                 <div style="font-size: 0.75rem; margin-top: 5px;">
-                                    👍 ${dieselAvailableVotes} | 👎 ${dieselUnavailableVotes}
+                                     ${dieselAvailableVotes} |  ${dieselUnavailableVotes}
                                 </div>
                             </div>
                         </div>
@@ -572,18 +572,18 @@
                         
                         <div class="card-actions">
                             <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'available')">
-                                👍 Gasolina Disponivel
+                                 Gasolina Disponivel
                             </button>
                             <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'unavailable')">
-                                👎 Gasolina Indisponivel
+                                 Gasolina Indisponivel
                             </button>
                         </div>
                         <div class="card-actions">
                             <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'available')">
-                                👍 Diesel Disponivel
+                                 Diesel Disponivel
                             </button>
                             <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'unavailable')">
-                                👎 Diesel Indisponivel
+                                 Diesel Indisponivel
                             </button>
                         </div>
                     </div>
