@@ -1,4 +1,3 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -8,18 +7,16 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configurar CORS para produção
-app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://seu-dominio.vercel.app'] // Substitua pelo seu domínio
-        : '*'
-}));
+app.use(cors());
 app.use(express.json());
 
-// Servir arquivos estáticos
+// SERVIDOR DE ARQUIVOS ESTÁTICOS - ESSA É A PARTE IMPORTANTE!
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Conectar ao Supabase
+// Ou especificamente:
+app.use('/styles.css', express.static(path.join(__dirname, 'public', 'styles.css')));
+app.use('/script.js', express.static(path.join(__dirname, 'public', 'script.js')));
+
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_ANON_KEY
@@ -64,15 +61,22 @@ async function calculateStationStatus(stationId) {
     }
 }
 
-// Rotas da API
+// Rota para listar todas as bombas
 app.get('/api/stations', async (req, res) => {
     try {
+        console.log('Buscando postos...');
+        
         const { data: stations, error: stationsError } = await supabase
             .from('fuel_stations')
             .select('*')
             .order('created_at', { ascending: false });
         
-        if (stationsError) throw stationsError;
+        if (stationsError) {
+            console.error('Erro ao buscar postos:', stationsError);
+            throw stationsError;
+        }
+        
+        console.log(`Encontrados ${stations?.length || 0} postos`);
         
         if (!stations || stations.length === 0) {
             return res.json([]);
@@ -85,7 +89,18 @@ app.get('/api/stations', async (req, res) => {
                 .eq('station_id', station.id)
                 .order('created_at', { ascending: false });
             
-            if (reportsError) throw reportsError;
+            if (reportsError) {
+                console.error(`Erro ao buscar reports do posto ${station.id}:`, reportsError);
+                return {
+                    id: station.id,
+                    name: station.name,
+                    location: station.location,
+                    status: 'available',
+                    reportsCount: 0,
+                    confirmations: 0,
+                    lastUpdate: station.created_at
+                };
+            }
             
             const status = await calculateStationStatus(station.id);
             const confirmations = reports?.filter(r => r.status === 'available').length || 0;
@@ -105,12 +120,15 @@ app.get('/api/stations', async (req, res) => {
         res.json(stationsWithStatus);
     } catch (error) {
         console.error('Error fetching stations:', error);
-        res.status(500).json({ error: 'Erro ao buscar postos' });
+        res.status(500).json({ error: 'Erro ao buscar postos: ' + error.message });
     }
 });
 
+// Rota para adicionar nova bomba
 app.post('/api/stations', async (req, res) => {
     const { name, location, status = 'available' } = req.body;
+    
+    console.log('Adicionando novo posto:', { name, location, status });
     
     try {
         const { data: newStation, error: insertError } = await supabase
@@ -119,7 +137,12 @@ app.post('/api/stations', async (req, res) => {
             .select()
             .single();
         
-        if (insertError) throw insertError;
+        if (insertError) {
+            console.error('Erro ao inserir posto:', insertError);
+            throw insertError;
+        }
+        
+        console.log('Posto criado com ID:', newStation.id);
         
         const { error: reportError } = await supabase
             .from('reports')
@@ -128,7 +151,9 @@ app.post('/api/stations', async (req, res) => {
                 status: status
             }]);
         
-        if (reportError) throw reportError;
+        if (reportError) {
+            console.error('Erro ao adicionar report:', reportError);
+        }
         
         res.status(201).json({
             ...newStation,
@@ -139,15 +164,29 @@ app.post('/api/stations', async (req, res) => {
         });
     } catch (error) {
         console.error('Error adding station:', error);
-        res.status(500).json({ error: 'Erro ao adicionar posto' });
+        res.status(500).json({ error: 'Erro ao adicionar posto: ' + error.message });
     }
 });
 
+// Rota para reportar status
 app.post('/api/stations/:id/report', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     
+    console.log(`Reportando status ${status} para posto ${id}`);
+    
     try {
+        const { data: station, error: stationError } = await supabase
+            .from('fuel_stations')
+            .select('id')
+            .eq('id', id)
+            .single();
+        
+        if (stationError || !station) {
+            console.error('Posto não encontrado:', id);
+            return res.status(404).json({ error: 'Posto não encontrado' });
+        }
+        
         const { error: reportError } = await supabase
             .from('reports')
             .insert([{
@@ -155,16 +194,26 @@ app.post('/api/stations/:id/report', async (req, res) => {
                 status: status
             }]);
         
-        if (reportError) throw reportError;
+        if (reportError) {
+            console.error('Erro ao adicionar report:', reportError);
+            throw reportError;
+        }
         
         const newStatus = await calculateStationStatus(parseInt(id));
         
-        const { data: reports } = await supabase
+        const { data: reports, error: reportsError } = await supabase
             .from('reports')
             .select('status')
             .eq('station_id', parseInt(id));
         
+        if (reportsError) {
+            console.error('Erro ao buscar reports:', reportsError);
+            throw reportsError;
+        }
+        
         const confirmations = reports?.filter(r => r.status === 'available').length || 0;
+        
+        console.log(`Report registrado! Novo status: ${newStatus}, Confirmações: ${confirmations}`);
         
         res.json({
             success: true,
@@ -174,16 +223,17 @@ app.post('/api/stations/:id/report', async (req, res) => {
         });
     } catch (error) {
         console.error('Error reporting status:', error);
-        res.status(500).json({ error: 'Erro ao registrar reporte' });
+        res.status(500).json({ error: 'Erro ao registrar reporte: ' + error.message });
     }
 });
 
-// Rota para frontend (SPA)
-app.get('*', (req, res) => {
+// ROTA PARA SERVIR O INDEX.HTML (importante!)
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
     console.log(`📊 Conectado ao Supabase`);
+    console.log(`📁 Servindo arquivos estáticos de: ${path.join(__dirname, 'public')}`);
 });
