@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Bombas Nampula - Monitoramento Colaborativo de Combustivel</title>
+    <title>Bombas Nampula - Gasolina e Diesel</title>
     <style>
         * {
             margin: 0;
@@ -96,7 +96,6 @@
         .btn-primary:hover {
             background: #5a67d8;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102,126,234,0.3);
         }
 
         .btn-filter {
@@ -107,6 +106,29 @@
         .btn-filter.active {
             background: #667eea;
             color: white;
+        }
+
+        .fuel-type-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .fuel-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .fuel-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
         }
 
         .stations-grid {
@@ -121,13 +143,12 @@
             border-radius: 20px;
             padding: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.3s ease;
             animation: fadeInUp 0.5s ease;
         }
 
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
         }
 
         @keyframes fadeInUp {
@@ -159,32 +180,42 @@
             color: #666;
             font-size: 0.9rem;
             margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
 
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
+        .fuel-status {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .fuel-item {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
             text-align: center;
+            font-weight: bold;
+        }
+
+        .fuel-gasoline {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .fuel-diesel {
+            background: #e0f2fe;
+            border-left: 4px solid #0284c7;
         }
 
         .status-available {
-            background: #48bb78;
-            color: white;
+            color: #16a34a;
         }
 
         .status-busy {
-            background: #ecc94b;
-            color: #333;
+            color: #d97706;
         }
 
         .status-unavailable {
-            background: #f56565;
-            color: white;
+            color: #dc2626;
         }
 
         .info-row {
@@ -209,39 +240,47 @@
             display: flex;
             gap: 10px;
             margin-top: 15px;
+            flex-wrap: wrap;
         }
 
-        .btn-confirm {
+        .btn-gasoline {
             flex: 1;
-            background: #48bb78;
+            background: #f59e0b;
             color: white;
-            padding: 10px;
+            padding: 8px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.2s ease;
+            font-size: 0.85rem;
         }
 
-        .btn-confirm:hover {
-            background: #38a169;
-            transform: scale(1.02);
-        }
-
-        .btn-report {
+        .btn-diesel {
             flex: 1;
-            background: #f56565;
+            background: #0284c7;
             color: white;
-            padding: 10px;
+            padding: 8px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.2s ease;
+            font-size: 0.85rem;
         }
 
-        .btn-report:hover {
-            background: #e53e3e;
+        .btn-unavailable {
+            flex: 1;
+            background: #dc2626;
+            color: white;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        button:hover {
+            opacity: 0.9;
             transform: scale(1.02);
         }
 
@@ -256,12 +295,6 @@
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
 
         .modal-content {
@@ -270,8 +303,6 @@
             border-radius: 20px;
             max-width: 500px;
             width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         .modal-content h2 {
@@ -297,13 +328,6 @@
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 1rem;
-            transition: border-color 0.2s ease;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
         }
 
         .form-actions {
@@ -328,25 +352,16 @@
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
             .stations-grid {
                 grid-template-columns: 1fr;
-                gap: 15px;
             }
             
             .card-actions {
                 flex-direction: column;
             }
             
-            .stats {
+            .fuel-status {
                 flex-direction: column;
-            }
-            
-            h1 {
-                font-size: 1.5rem;
             }
         }
     </style>
@@ -355,25 +370,32 @@
     <div class="container">
         <div class="header">
             <h1>Bombas Nampula</h1>
-            <p class="subtitle">Monitoramento Colaborativo de Combustivel - Ajude a comunidade encontrando combustivel rapidamente!</p>
+            <p class="subtitle">Monitoramento Colaborativo - Saiba onde tem Gasolina ou Diesel</p>
+            
+            <div class="fuel-type-buttons">
+                <button class="fuel-btn active" onclick="selectFuelType('all')" data-fuel="all">Todos</button>
+                <button class="fuel-btn" onclick="selectFuelType('gasoline')" data-fuel="gasoline">Gasolina</button>
+                <button class="fuel-btn" onclick="selectFuelType('diesel')" data-fuel="diesel">Diesel</button>
+            </div>
+
             <div class="stats" id="stats">
                 <div class="stat-card">
                     <div class="stat-value" id="totalStations">0</div>
                     <div class="stat-label">Total de Postos</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="availableStations">0</div>
-                    <div class="stat-label">Com Combustivel</div>
+                    <div class="stat-value" id="gasolineStations">0</div>
+                    <div class="stat-label">Com Gasolina</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="totalReports">0</div>
-                    <div class="stat-label">Total de Reportes</div>
+                    <div class="stat-value" id="dieselStations">0</div>
+                    <div class="stat-label">Com Diesel</div>
                 </div>
             </div>
         </div>
 
         <div class="controls">
-            <button class="btn btn-primary" onclick="openAddModal()">Adicionar Bomba</button>
+            <button class="btn btn-primary" onclick="openAddModal()">Adicionar Posto</button>
             <button class="btn btn-filter active" onclick="filterStations('all')" data-filter="all">Todos</button>
             <button class="btn btn-filter" onclick="filterStations('available')" data-filter="available">Disponivel</button>
             <button class="btn btn-filter" onclick="filterStations('busy')" data-filter="busy">Lotado</button>
@@ -381,7 +403,7 @@
         </div>
 
         <div id="stationsGrid" class="stations-grid">
-            <div class="loading">Carregando postos de combustivel...</div>
+            <div class="loading">Carregando postos...</div>
         </div>
     </div>
 
@@ -399,11 +421,19 @@
                     <input type="text" id="stationLocation" required placeholder="Ex: Centro, Av. Eduardo Mondlane">
                 </div>
                 <div class="form-group">
-                    <label>Status Inicial</label>
-                    <select id="initialStatus">
+                    <label>Gasolina</label>
+                    <select id="gasolineStatus">
                         <option value="available">Disponivel</option>
-                        <option value="busy">Lotado</option>
-                        <option value="unavailable">Sem Combustivel</option>
+                        <option value="busy">Lotado/Fila</option>
+                        <option value="unavailable">Indisponivel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Diesel</label>
+                    <select id="dieselStatus">
+                        <option value="available">Disponivel</option>
+                        <option value="busy">Lotado/Fila</option>
+                        <option value="unavailable">Indisponivel</option>
                     </select>
                 </div>
                 <div class="form-actions">
@@ -415,113 +445,148 @@
     </div>
 
     <script>
-        // Configuracao
         const API_URL = window.location.origin + '/api';
         let stations = [];
         let currentFilter = 'all';
+        let currentFuelType = 'all';
 
-        // Buscar estacoes da API
         async function fetchStations() {
             try {
                 const response = await fetch(`${API_URL}/stations`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
+                if (!response.ok) throw new Error('Network error');
                 stations = await response.json();
                 updateStats();
                 renderStations();
             } catch (error) {
-                console.error('Error fetching stations:', error);
-                document.getElementById('stationsGrid').innerHTML = '<div class="empty-state">Erro ao carregar postos. Verifique sua conexao.</div>';
+                console.error('Error:', error);
+                document.getElementById('stationsGrid').innerHTML = '<div class="empty-state">Erro ao carregar postos.</div>';
             }
         }
 
-        // Atualizar estatisticas
         function updateStats() {
             const total = stations.length;
-            const available = stations.filter(s => s.status === 'available').length;
-            const reports = stations.reduce((sum, s) => sum + (s.reportsCount || 0), 0);
+            let gasolineAvailable = 0;
+            let dieselAvailable = 0;
+            
+            stations.forEach(station => {
+                if (station.gasoline === 'available') gasolineAvailable++;
+                if (station.diesel === 'available') dieselAvailable++;
+            });
             
             document.getElementById('totalStations').textContent = total;
-            document.getElementById('availableStations').textContent = available;
-            document.getElementById('totalReports').textContent = reports;
+            document.getElementById('gasolineStations').textContent = gasolineAvailable;
+            document.getElementById('dieselStations').textContent = dieselAvailable;
         }
 
-        // Tempo relativo
+        function getStatusText(status) {
+            const map = {
+                'available': 'Disponivel',
+                'busy': 'Lotado',
+                'unavailable': 'Indisponivel'
+            };
+            return map[status] || 'Indisponivel';
+        }
+
+        function getStatusClass(status) {
+            const map = {
+                'available': 'status-available',
+                'busy': 'status-busy',
+                'unavailable': 'status-unavailable'
+            };
+            return map[status] || 'status-unavailable';
+        }
+
         function getRelativeTime(timestamp) {
-            if (!timestamp) return 'ha poucos instantes';
-            
+            if (!timestamp) return 'ha pouco';
             const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
-            
             if (seconds < 60) return `ha ${seconds} segundos`;
             const minutes = Math.floor(seconds / 60);
-            if (minutes < 60) return `ha ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+            if (minutes < 60) return `ha ${minutes} min`;
             const hours = Math.floor(minutes / 60);
-            if (hours < 24) return `ha ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+            if (hours < 24) return `ha ${hours} h`;
             const days = Math.floor(hours / 24);
-            return `ha ${days} ${days === 1 ? 'dia' : 'dias'}`;
+            return `ha ${days} dias`;
         }
 
-        // Informacoes do status
-        function getStatusInfo(status) {
-            const statusMap = {
-                available: { text: 'Disponivel', class: 'status-available' },
-                busy: { text: 'Lotado', class: 'status-busy' },
-                unavailable: { text: 'Sem Combustivel', class: 'status-unavailable' }
-            };
-            return statusMap[status] || statusMap.unavailable;
-        }
-
-        // Escapar HTML
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Renderizar estacoes
+        function shouldShowStation(station) {
+            if (currentFuelType === 'all') return true;
+            if (currentFuelType === 'gasoline') return station.gasoline === 'available';
+            if (currentFuelType === 'diesel') return station.diesel === 'available';
+            return true;
+        }
+
         function renderStations() {
             const grid = document.getElementById('stationsGrid');
-            const filteredStations = currentFilter === 'all' 
-                ? stations 
-                : stations.filter(s => s.status === currentFilter);
+            
+            let filteredStations = stations.filter(s => {
+                if (currentFilter !== 'all') {
+                    return s.status === currentFilter;
+                }
+                return true;
+            });
+            
+            filteredStations = filteredStations.filter(shouldShowStation);
             
             if (filteredStations.length === 0) {
-                grid.innerHTML = '<div class="empty-state">Nenhum posto encontrado com este filtro.</div>';
+                grid.innerHTML = '<div class="empty-state">Nenhum posto encontrado.</div>';
                 return;
             }
             
             grid.innerHTML = filteredStations.map(station => {
-                const statusInfo = getStatusInfo(station.status);
+                const gasolineStatus = getStatusText(station.gasoline);
+                const dieselStatus = getStatusText(station.diesel);
+                const gasolineClass = getStatusClass(station.gasoline);
+                const dieselClass = getStatusClass(station.diesel);
+                
                 return `
-                    <div class="card" data-id="${station.id}">
+                    <div class="card">
                         <div class="card-header">
                             <div>
                                 <div class="station-name">${escapeHtml(station.name)}</div>
-                                <div class="station-location">
-                                    Local: ${escapeHtml(station.location)}
-                                </div>
-                            </div>
-                            <div class="status-badge ${statusInfo.class}">
-                                ${statusInfo.text}
+                                <div class="station-location">Local: ${escapeHtml(station.location)}</div>
                             </div>
                         </div>
+                        
+                        <div class="fuel-status">
+                            <div class="fuel-item fuel-gasoline">
+                                <strong>Gasolina:</strong><br>
+                                <span class="${gasolineClass}">${gasolineStatus}</span>
+                            </div>
+                            <div class="fuel-item fuel-diesel">
+                                <strong>Diesel:</strong><br>
+                                <span class="${dieselClass}">${dieselStatus}</span>
+                            </div>
+                        </div>
+                        
                         <div class="info-row">
                             <span>Confirmacoes:</span>
                             <span class="confirmations">${station.confirmations || 0}</span>
                         </div>
-                        <div class="info-row">
-                            <span>Total de reportes:</span>
-                            <span>${station.reportsCount || 0}</span>
-                        </div>
+                        
                         <div class="last-update">
                             Ultima atualizacao: ${getRelativeTime(station.lastUpdate)}
                         </div>
+                        
                         <div class="card-actions">
-                            <button class="btn-confirm" onclick="reportStatus(${station.id}, 'available')">
-                                Confirmar Disponivel
+                            <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'available')">
+                                Gasolina Disponivel
                             </button>
-                            <button class="btn-report" onclick="reportStatus(${station.id}, 'unavailable')">
-                                Reportar Indisponivel
+                            <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'unavailable')">
+                                Gasolina Indisponivel
+                            </button>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'available')">
+                                Diesel Disponivel
+                            </button>
+                            <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'unavailable')">
+                                Diesel Indisponivel
                             </button>
                         </div>
                     </div>
@@ -529,57 +594,55 @@
             }).join('');
         }
 
-        // Reportar status
-        async function reportStatus(stationId, status) {
+        async function reportFuel(stationId, fuelType, status) {
             try {
-                const response = await fetch(`${API_URL}/stations/${stationId}/report`, {
+                const response = await fetch(`${API_URL}/stations/${stationId}/report-fuel`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status })
+                    body: JSON.stringify({ fuelType, status })
                 });
                 
                 if (response.ok) {
                     await fetchStations();
-                    showNotification('Reporte registrado com sucesso!', 'success');
+                    showNotification(`${fuelType === 'gasoline' ? 'Gasolina' : 'Diesel'} atualizado!`, 'success');
                 } else {
-                    showNotification('Erro ao registrar reporte', 'error');
+                    showNotification('Erro ao atualizar', 'error');
                 }
             } catch (error) {
-                console.error('Error reporting status:', error);
-                showNotification('Erro ao conectar com o servidor', 'error');
+                console.error('Error:', error);
+                showNotification('Erro de conexao', 'error');
             }
         }
 
-        // Adicionar nova estacao
         async function addStation(event) {
             event.preventDefault();
             
             const name = document.getElementById('stationName').value;
             const location = document.getElementById('stationLocation').value;
-            const status = document.getElementById('initialStatus').value;
+            const gasoline = document.getElementById('gasolineStatus').value;
+            const diesel = document.getElementById('dieselStatus').value;
             
             try {
                 const response = await fetch(`${API_URL}/stations`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, location, status })
+                    body: JSON.stringify({ name, location, gasoline, diesel })
                 });
                 
                 if (response.ok) {
                     await fetchStations();
                     closeAddModal();
                     document.getElementById('addStationForm').reset();
-                    showNotification('Posto adicionado com sucesso!', 'success');
+                    showNotification('Posto adicionado!', 'success');
                 } else {
-                    showNotification('Erro ao adicionar posto', 'error');
+                    showNotification('Erro ao adicionar', 'error');
                 }
             } catch (error) {
-                console.error('Error adding station:', error);
-                showNotification('Erro ao conectar com o servidor', 'error');
+                console.error('Error:', error);
+                showNotification('Erro de conexao', 'error');
             }
         }
 
-        // Filtrar estacoes
         function filterStations(filter) {
             currentFilter = filter;
             document.querySelectorAll('.btn-filter').forEach(btn => {
@@ -592,7 +655,18 @@
             renderStations();
         }
 
-        // Funcoes do modal
+        function selectFuelType(type) {
+            currentFuelType = type;
+            document.querySelectorAll('.fuel-btn').forEach(btn => {
+                if (btn.dataset.fuel === type) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            renderStations();
+        }
+
         function openAddModal() {
             document.getElementById('addModal').style.display = 'flex';
         }
@@ -601,7 +675,6 @@
             document.getElementById('addModal').style.display = 'none';
         }
         
-        // Notificacao
         function showNotification(message, type) {
             const notification = document.createElement('div');
             notification.textContent = message;
@@ -609,7 +682,7 @@
                 position: fixed;
                 bottom: 20px;
                 right: 20px;
-                background: ${type === 'success' ? '#48bb78' : '#f56565'};
+                background: ${type === 'success' ? '#16a34a' : '#dc2626'};
                 color: white;
                 padding: 15px 25px;
                 border-radius: 10px;
@@ -621,7 +694,6 @@
             setTimeout(() => notification.remove(), 3000);
         }
 
-        // Adicionar animacao para notificacao
         const style = document.createElement('style');
         style.textContent = `
             @keyframes slideIn {
@@ -637,10 +709,8 @@
         `;
         document.head.appendChild(style);
         
-        // Event listeners
         document.getElementById('addStationForm').addEventListener('submit', addStation);
         
-        // Fechar modal ao clicar fora
         window.onclick = function(event) {
             const modal = document.getElementById('addModal');
             if (event.target === modal) {
@@ -648,10 +718,7 @@
             }
         }
         
-        // Carregamento inicial
         fetchStations();
-        
-        // Auto-refresh a cada 2 minutos
         setInterval(fetchStations, 120000);
     </script>
 </body>
