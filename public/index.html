@@ -182,6 +182,20 @@
             margin-bottom: 15px;
         }
 
+        .station-photo {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 0.85rem;
+        }
+
         .fuel-status {
             display: flex;
             gap: 10px;
@@ -314,8 +328,10 @@
             background: white;
             padding: 30px;
             border-radius: 20px;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-content h2 {
@@ -341,6 +357,18 @@
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 1rem;
+        }
+
+        .photo-preview {
+            margin-top: 10px;
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .photo-preview.show {
+            display: block;
         }
 
         .form-actions {
@@ -432,6 +460,11 @@
                     <input type="text" id="stationLocation" required placeholder="Ex: Centro, Av. Eduardo Mondlane">
                 </div>
                 <div class="form-group">
+                    <label>Foto do Posto (Opcional)</label>
+                    <input type="file" id="stationPhoto" accept="image/*" onchange="previewPhoto(this)">
+                    <img id="photoPreview" class="photo-preview" alt="Preview da foto">
+                </div>
+                <div class="form-group">
                     <label>Gasolina</label>
                     <select id="gasolineStatus">
                         <option value="available">Disponivel</option>
@@ -459,6 +492,21 @@
         let currentFilter = 'all';
         let currentFuelType = 'all';
         let disabledButtons = new Map();
+
+        // Funcao para preview da foto
+        function previewPhoto(input) {
+            const preview = document.getElementById('photoPreview');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.add('show');
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.classList.remove('show');
+            }
+        }
 
         async function fetchStations() {
             try {
@@ -551,9 +599,11 @@
                 const dieselStatus = getStatusText(station.diesel);
                 const gasolineClass = getStatusClass(station.gasoline);
                 const dieselClass = getStatusClass(station.diesel);
+                const photoHtml = station.photo ? `<img class="station-photo" src="${station.photo}" alt="Foto do posto">` : '<div class="station-photo">Sem foto</div>';
                 
                 return `
                     <div class="card" data-id="${station.id}">
+                        ${photoHtml}
                         <div class="card-header">
                             <div>
                                 <div class="station-name">${escapeHtml(station.name)}</div>
@@ -641,18 +691,25 @@
             const location = document.getElementById('stationLocation').value;
             const gasoline = document.getElementById('gasolineStatus').value;
             const diesel = document.getElementById('dieselStatus').value;
+            const photoFile = document.getElementById('stationPhoto').files[0];
+            
+            let photoBase64 = null;
+            if (photoFile) {
+                photoBase64 = await convertToBase64(photoFile);
+            }
             
             try {
                 const response = await fetch(`${API_URL}/stations`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, location, gasoline, diesel })
+                    body: JSON.stringify({ name, location, gasoline, diesel, photo: photoBase64 })
                 });
                 
                 if (response.ok) {
                     await fetchStations();
                     closeAddModal();
                     document.getElementById('addStationForm').reset();
+                    document.getElementById('photoPreview').classList.remove('show');
                     alert('Posto adicionado com sucesso!');
                 } else {
                     alert('Erro ao adicionar posto.');
@@ -661,6 +718,15 @@
                 console.error('Error:', error);
                 alert('Erro de conexao.');
             }
+        }
+
+        function convertToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
         }
 
         function filterStations(filter) {
@@ -693,6 +759,8 @@
         
         function closeAddModal() {
             document.getElementById('addModal').style.display = 'none';
+            document.getElementById('addStationForm').reset();
+            document.getElementById('photoPreview').classList.remove('show');
         }
         
         document.getElementById('addStationForm').addEventListener('submit', addStation);
