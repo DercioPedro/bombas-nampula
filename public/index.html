@@ -267,18 +267,6 @@
             font-size: 0.85rem;
         }
 
-        .btn-unavailable {
-            flex: 1;
-            background: #dc2626;
-            color: white;
-            padding: 8px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
         button:hover {
             opacity: 0.9;
             transform: scale(1.02);
@@ -398,7 +386,6 @@
             <button class="btn btn-primary" onclick="openAddModal()">Adicionar Posto</button>
             <button class="btn btn-filter active" onclick="filterStations('all')" data-filter="all">Todos</button>
             <button class="btn btn-filter" onclick="filterStations('available')" data-filter="available">Disponivel</button>
-            <!-- <button class="btn btn-filter" onclick="filterStations('busy')" data-filter="busy">Cheio mas acessivel</button> -->
             <button class="btn btn-filter" onclick="filterStations('unavailable')" data-filter="unavailable">Sem Combustivel</button>
         </div>
 
@@ -424,7 +411,6 @@
                     <label>Gasolina</label>
                     <select id="gasolineStatus">
                         <option value="available">Disponivel</option>
-                        <option value="busy">Cheio/Fila</option>
                         <option value="unavailable">Indisponivel</option>
                     </select>
                 </div>
@@ -432,7 +418,6 @@
                     <label>Diesel</label>
                     <select id="dieselStatus">
                         <option value="available">Disponivel</option>
-                        <option value="busy">Cheio/Fila</option>
                         <option value="unavailable">Indisponivel</option>
                     </select>
                 </div>
@@ -481,7 +466,6 @@
         function getStatusText(status) {
             const map = {
                 'available': 'Disponivel',
-                'busy': 'Cheio/Fila',
                 'unavailable': 'Indisponivel'
             };
             return map[status] || 'Indisponivel';
@@ -490,7 +474,6 @@
         function getStatusClass(status) {
             const map = {
                 'available': 'status-available',
-                'busy': 'status-busy',
                 'unavailable': 'status-unavailable'
             };
             return map[status] || 'status-unavailable';
@@ -544,6 +527,14 @@
                 const gasolineClass = getStatusClass(station.gasoline);
                 const dieselClass = getStatusClass(station.diesel);
                 
+                // Conta quantos votos disponiveis e indisponiveis para Gasolina
+                const gasolineAvailableVotes = station.gasolineAvailableVotes || 0;
+                const gasolineUnavailableVotes = station.gasolineUnavailableVotes || 0;
+                
+                // Conta quantos votos disponiveis e indisponiveis para Diesel
+                const dieselAvailableVotes = station.dieselAvailableVotes || 0;
+                const dieselUnavailableVotes = station.dieselUnavailableVotes || 0;
+                
                 return `
                     <div class="card">
                         <div class="card-header">
@@ -557,10 +548,16 @@
                             <div class="fuel-item fuel-gasoline">
                                 <strong>Gasolina:</strong><br>
                                 <span class="${gasolineClass}">${gasolineStatus}</span>
+                                <div style="font-size: 0.75rem; margin-top: 5px;">
+                                    👍 ${gasolineAvailableVotes} | 👎 ${gasolineUnavailableVotes}
+                                </div>
                             </div>
                             <div class="fuel-item fuel-diesel">
                                 <strong>Diesel:</strong><br>
                                 <span class="${dieselClass}">${dieselStatus}</span>
+                                <div style="font-size: 0.75rem; margin-top: 5px;">
+                                    👍 ${dieselAvailableVotes} | 👎 ${dieselUnavailableVotes}
+                                </div>
                             </div>
                         </div>
                         
@@ -575,18 +572,18 @@
                         
                         <div class="card-actions">
                             <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'available')">
-                                Clique para marcar Gasolina Disponivel
+                                👍 Gasolina Disponivel
                             </button>
                             <button class="btn-gasoline" onclick="reportFuel(${station.id}, 'gasoline', 'unavailable')">
-                                Clique para marcar Gasolina Indisponivel
+                                👎 Gasolina Indisponivel
                             </button>
                         </div>
                         <div class="card-actions">
                             <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'available')">
-                               Clique para marcar Diesel Disponivel
+                                👍 Diesel Disponivel
                             </button>
                             <button class="btn-diesel" onclick="reportFuel(${station.id}, 'diesel', 'unavailable')">
-                                Clique para marcar Diesel Indisponivel
+                                👎 Diesel Indisponivel
                             </button>
                         </div>
                     </div>
@@ -603,8 +600,12 @@
                 });
                 
                 if (response.ok) {
+                    const result = await response.json();
                     await fetchStations();
-                    showNotification(`${fuelType === 'gasoline' ? 'Gasolina' : 'Diesel'} atualizado!`, 'success');
+                    
+                    const fuelName = fuelType === 'gasoline' ? 'Gasolina' : 'Diesel';
+                    const statusText = status === 'available' ? 'Disponivel' : 'Indisponivel';
+                    showNotification(`${fuelName} marcado como ${statusText}!`, 'success');
                 } else {
                     showNotification('Erro ao atualizar', 'error');
                 }
