@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: white;
             min-height: 100vh;
             padding: 20px;
         }
@@ -550,24 +550,24 @@
                             <button class="btn-gasoline" 
                                 onclick="reportFuel(${station.id}, 'gasoline', 'available', this)"
                                 ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'Aguarde...' : 'Marcar Gasolina Disponivel'}
+                                ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'Aguarde...' : ' Clique para Marcar Gasolina Disponivel'}
                             </button>
                             <button class="btn-gasoline" 
                                 onclick="reportFuel(${station.id}, 'gasoline', 'unavailable', this)"
                                 ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'Aguarde...' : 'Marcar Gasolina Indisponivel'}
+                                ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'Aguarde...' : 'Clique para Marcar Gasolina Indisponivel'}
                             </button>
                         </div>
                         <div class="card-actions">
                             <button class="btn-diesel" 
                                 onclick="reportFuel(${station.id}, 'diesel', 'available', this)"
                                 ${disabledButtons.has(`diesel-${station.id}-available`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`diesel-${station.id}-available`) ? 'Aguarde...' : 'Marcar Diesel Disponivel'}
+                                ${disabledButtons.has(`diesel-${station.id}-available`) ? 'Aguarde...' : 'Clique para Marcar Diesel Disponivel'}
                             </button>
                             <button class="btn-diesel" 
                                 onclick="reportFuel(${station.id}, 'diesel', 'unavailable', this)"
                                 ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'Aguarde...' : 'Marcar Diesel Indisponivel'}
+                                ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'Aguarde...' : 'Clique para Marcar Diesel Indisponivel'}
                             </button>
                         </div>
                     </div>
