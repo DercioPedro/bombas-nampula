@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -428,18 +428,18 @@
         let stations = [];
         let currentFilter = 'all';
         let currentFuelType = 'all';
-        let disabledButtons = new Map();
+        let pendingRequests = new Map();
 
         async function fetchStations() {
             try {
                 const response = await fetch(`${API_URL}/stations`);
                 if (!response.ok) throw new Error('Network error');
-                stations = await response.json();
+                const newStations = await response.json();
+                stations = newStations;
                 updateStats();
                 renderStations();
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('stationsGrid').innerHTML = '<div class="empty-state">Erro ao carregar postos. Verifique sua conexao.</div>';
             }
         }
 
@@ -522,6 +522,11 @@
                 const gasolineClass = getStatusClass(station.gasoline);
                 const dieselClass = getStatusClass(station.diesel);
                 
+                const gasAvailableKey = `gasoline-${station.id}-available`;
+                const gasUnavailableKey = `gasoline-${station.id}-unavailable`;
+                const dieselAvailableKey = `diesel-${station.id}-available`;
+                const dieselUnavailableKey = `diesel-${station.id}-unavailable`;
+                
                 return `
                     <div class="card" data-id="${station.id}">
                         <div class="card-header">
@@ -548,26 +553,30 @@
                         
                         <div class="card-actions">
                             <button class="btn-gasoline" 
-                                onclick="reportFuel(${station.id}, 'gasoline', 'available', this)"
-                                ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'Aguarde...' : ' Clique para Marcar Gasolina Disponivel'}
+                                onclick="reportFuel(${station.id}, 'gasoline', 'available')"
+                                id="btn-${gasAvailableKey}"
+                                ${pendingRequests.has(gasAvailableKey) ? 'disabled' : ''}>
+                                ${pendingRequests.has(gasAvailableKey) ? 'Aguarde...' : 'Marcar Gasolina Disponivel'}
                             </button>
                             <button class="btn-gasoline" 
-                                onclick="reportFuel(${station.id}, 'gasoline', 'unavailable', this)"
-                                ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'Aguarde...' : 'Clique para Marcar Gasolina Indisponivel'}
+                                onclick="reportFuel(${station.id}, 'gasoline', 'unavailable')"
+                                id="btn-${gasUnavailableKey}"
+                                ${pendingRequests.has(gasUnavailableKey) ? 'disabled' : ''}>
+                                ${pendingRequests.has(gasUnavailableKey) ? 'Aguarde...' : 'Marcar Gasolina Indisponivel'}
                             </button>
                         </div>
                         <div class="card-actions">
                             <button class="btn-diesel" 
-                                onclick="reportFuel(${station.id}, 'diesel', 'available', this)"
-                                ${disabledButtons.has(`diesel-${station.id}-available`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`diesel-${station.id}-available`) ? 'Aguarde...' : 'Clique para Marcar Diesel Disponivel'}
+                                onclick="reportFuel(${station.id}, 'diesel', 'available')"
+                                id="btn-${dieselAvailableKey}"
+                                ${pendingRequests.has(dieselAvailableKey) ? 'disabled' : ''}>
+                                ${pendingRequests.has(dieselAvailableKey) ? 'Aguarde...' : 'Marcar Diesel Disponivel'}
                             </button>
                             <button class="btn-diesel" 
-                                onclick="reportFuel(${station.id}, 'diesel', 'unavailable', this)"
-                                ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'Aguarde...' : 'Clique para Marcar Diesel Indisponivel'}
+                                onclick="reportFuel(${station.id}, 'diesel', 'unavailable')"
+                                id="btn-${dieselUnavailableKey}"
+                                ${pendingRequests.has(dieselUnavailableKey) ? 'disabled' : ''}>
+                                ${pendingRequests.has(dieselUnavailableKey) ? 'Aguarde...' : 'Marcar Diesel Indisponivel'}
                             </button>
                         </div>
                     </div>
@@ -575,13 +584,21 @@
             }).join('');
         }
 
-        async function reportFuel(stationId, fuelType, status, buttonElement) {
-            const buttonKey = `${fuelType}-${stationId}-${status}`;
+        async function reportFuel(stationId, fuelType, status) {
+            const requestKey = `${fuelType}-${stationId}-${status}`;
             
-            if (disabledButtons.has(buttonKey)) return;
+            if (pendingRequests.has(requestKey)) {
+                return;
+            }
             
-            disabledButtons.set(buttonKey, true);
-            renderStations();
+            pendingRequests.set(requestKey, true);
+            
+            const buttonId = `btn-${requestKey}`;
+            const button = document.getElementById(buttonId);
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Aguarde...';
+            }
             
             try {
                 const response = await fetch(`${API_URL}/stations/${stationId}/report-fuel`, {
@@ -594,13 +611,24 @@
                     await fetchStations();
                 } else {
                     alert('Erro ao atualizar. Tente novamente.');
+                    if (button) {
+                        button.disabled = false;
+                        button.textContent = status === 'available' ? 
+                            `Marcar ${fuelType === 'gasoline' ? 'Gasolina' : 'Diesel'} Disponivel` : 
+                            `Marcar ${fuelType === 'gasoline' ? 'Gasolina' : 'Diesel'} Indisponivel`;
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Erro de conexao. Tente novamente.');
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = status === 'available' ? 
+                        `Marcar ${fuelType === 'gasoline' ? 'Gasolina' : 'Diesel'} Disponivel` : 
+                        `Marcar ${fuelType === 'gasoline' ? 'Gasolina' : 'Diesel'} Indisponivel`;
+                }
             } finally {
-                disabledButtons.delete(buttonKey);
-                renderStations();
+                pendingRequests.delete(requestKey);
             }
         }
 
@@ -611,6 +639,11 @@
             const location = document.getElementById('stationLocation').value;
             const gasoline = document.getElementById('gasolineStatus').value;
             const diesel = document.getElementById('dieselStatus').value;
+            
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Adicionando...';
             
             try {
                 const response = await fetch(`${API_URL}/stations`, {
@@ -630,6 +663,9 @@
             } catch (error) {
                 console.error('Error:', error);
                 alert('Erro de conexao.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         }
 
@@ -675,7 +711,7 @@
         }
         
         fetchStations();
-        setInterval(fetchStations, 120000);
+        setInterval(fetchStations, 30000);
     </script>
 </body>
 </html>
