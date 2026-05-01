@@ -102,6 +102,49 @@ app.post('/api/stations', async (req, res) => {
     }
 });
 
+
+// Rota para adicionar nova bomba (com suporte a foto)
+app.post('/api/stations', async (req, res) => {
+    const { name, location, gasoline, diesel, photo } = req.body;
+    
+    console.log('Adicionando novo posto:', { name, location, gasoline, diesel });
+    
+    try {
+        const { data: newStation, error: insertError } = await supabase
+            .from('fuel_stations')
+            .insert([{ 
+                name, 
+                location,
+                gasoline_status: gasoline || 'available',
+                diesel_status: diesel || 'available',
+                photo: photo || null
+            }])
+            .select()
+            .single();
+        
+        if (insertError) {
+            console.error('Erro ao inserir posto:', insertError);
+            throw insertError;
+        }
+        
+        console.log('Posto criado com ID:', newStation.id);
+        
+        res.status(201).json({
+            id: newStation.id,
+            name: newStation.name,
+            location: newStation.location,
+            gasoline: gasoline || 'available',
+            diesel: diesel || 'available',
+            photo: photo || null,
+            status: 'available',
+            lastUpdate: new Date()
+        });
+    } catch (error) {
+        console.error('Error adding station:', error);
+        res.status(500).json({ error: 'Erro ao adicionar posto: ' + error.message });
+    }
+});
+
 // Rota para reportar status (atualiza apenas se houver mudanca)
 app.post('/api/stations/:id/report-fuel', async (req, res) => {
     const { id } = req.params;
