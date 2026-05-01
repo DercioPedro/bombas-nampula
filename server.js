@@ -16,45 +16,6 @@ const supabase = createClient(
     process.env.SUPABASE_ANON_KEY
 );
 
-// Função para calcular status do combustível com contagem de votos
-async function calculateFuelStatus(stationId, fuelType) {
-    try {
-        const { data: reports, error } = await supabase
-            .from('reports')
-            .select('status')
-            .eq('station_id', stationId)
-            .eq('fuel_type', fuelType)
-            .order('created_at', { ascending: false });
-        
-        if (error || !reports || reports.length === 0) {
-            return { status: 'available', availableVotes: 0, unavailableVotes: 0 };
-        }
-        
-        let availableVotes = 0;
-        let unavailableVotes = 0;
-        
-        reports.forEach(report => {
-            if (report.status === 'available') {
-                availableVotes++;
-            } else {
-                unavailableVotes++;
-            }
-        });
-        
-        // O status é decidido pela maioria dos votos
-        const status = availableVotes >= unavailableVotes ? 'available' : 'unavailable';
-        
-        return { 
-            status, 
-            availableVotes, 
-            unavailableVotes 
-        };
-    } catch (error) {
-        console.error('Error calculating fuel status:', error);
-        return { status: 'available', availableVotes: 0, unavailableVotes: 0 };
-    }
-}
-
 // Rota para listar todos os postos
 app.get('/api/stations', async (req, res) => {
     try {
@@ -74,31 +35,13 @@ app.get('/api/stations', async (req, res) => {
             return res.json([]);
         }
         
-        const stationsWithStatus = await Promise.all(stations.map(async (station) => {
-            // Buscar status atual para Gasolina e Diesel
-            const gasolineData = await calculateFuelStatus(station.id, 'gasoline');
-            const dieselData = await calculateFuelStatus(station.id, 'diesel');
+        const stationsWithStatus = stations.map(station => {
+            const gasolineStatus = station.gasoline_status || 'available';
+            const dieselStatus = station.diesel_status || 'available';
             
-            // Buscar todos os reports para contar confirmacoes
-            const { data: reports, error: reportsError } = await supabase
-                .from('reports')
-                .select('*')
-                .eq('station_id', station.id)
-                .order('created_at', { ascending: false });
-            
-            if (reportsError) {
-                console.error(`Erro ao buscar reports do posto ${station.id}:`, reportsError);
-            }
-            
-            const confirmations = reports?.filter(r => r.status === 'available').length || 0;
-            const lastUpdate = reports && reports.length > 0 ? reports[0].created_at : station.created_at;
-            
-            // Status geral do posto (se pelo menos um combustivel disponivel)
             let generalStatus = 'unavailable';
-            if (gasolineData.status === 'available' || dieselData.status === 'available') {
+            if (gasolineStatus === 'available' || dieselStatus === 'available') {
                 generalStatus = 'available';
-            } else {
-                generalStatus = 'unavailable';
             }
             
             return {
@@ -106,17 +49,11 @@ app.get('/api/stations', async (req, res) => {
                 name: station.name,
                 location: station.location,
                 status: generalStatus,
-                gasoline: gasolineData.status,
-                diesel: dieselData.status,
-                gasolineAvailableVotes: gasolineData.availableVotes,
-                gasolineUnavailableVotes: gasolineData.unavailableVotes,
-                dieselAvailableVotes: dieselData.availableVotes,
-                dieselUnavailableVotes: dieselData.unavailableVotes,
-                reportsCount: reports?.length || 0,
-                confirmations: confirmations,
-                lastUpdate: lastUpdate
+                gasoline: gasolineStatus,
+                diesel: dieselStatus,
+                lastUpdate: station.updated_at || station.created_at
             };
-        }));
+        });
         
         res.json(stationsWithStatus);
     } catch (error) {
@@ -136,7 +73,9 @@ app.post('/api/stations', async (req, res) => {
             .from('fuel_stations')
             .insert([{ 
                 name, 
-                location
+                location,
+                gasoline_status: gasoline || 'available',
+                diesel_status: diesel || 'available'
             }])
             .select()
             .single();
@@ -148,33 +87,13 @@ app.post('/api/stations', async (req, res) => {
         
         console.log('Posto criado com ID:', newStation.id);
         
-        // Adicionar reports iniciais
-        if (gasoline) {
-            await supabase
-                .from('reports')
-                .insert([{
-                    station_id: newStation.id,
-                    fuel_type: 'gasoline',
-                    status: gasoline
-                }]);
-        }
-        
-        if (diesel) {
-            await supabase
-                .from('reports')
-                .insert([{
-                    station_id: newStation.id,
-                    fuel_type: 'diesel',
-                    status: diesel
-                }]);
-        }
-        
         res.status(201).json({
-            ...newStation,
+            id: newStation.id,
+            name: newStation.name,
+            location: newStation.location,
             gasoline: gasoline || 'available',
             diesel: diesel || 'available',
-            reportsCount: (gasoline ? 1 : 0) + (diesel ? 1 : 0),
-            confirmations: (gasoline === 'available' ? 1 : 0) + (diesel === 'available' ? 1 : 0),
+            status: 'available',
             lastUpdate: new Date()
         });
     } catch (error) {
@@ -183,7 +102,7 @@ app.post('/api/stations', async (req, res) => {
     }
 });
 
-// Rota para reportar status de um combustivel especifico
+// Rota para reportar status (atualiza apenas se houver mudanca)
 app.post('/api/stations/:id/report-fuel', async (req, res) => {
     const { id } = req.params;
     const { fuelType, status } = req.body;
@@ -191,10 +110,10 @@ app.post('/api/stations/:id/report-fuel', async (req, res) => {
     console.log(`Reportando ${fuelType} como ${status} para posto ${id}`);
     
     try {
-        // Verificar se o posto existe
+        // Buscar status atual
         const { data: station, error: stationError } = await supabase
             .from('fuel_stations')
-            .select('id')
+            .select('id, gasoline_status, diesel_status')
             .eq('id', id)
             .single();
         
@@ -203,32 +122,44 @@ app.post('/api/stations/:id/report-fuel', async (req, res) => {
             return res.status(404).json({ error: 'Posto nao encontrado' });
         }
         
-        // Adicionar novo report
-        const { error: reportError } = await supabase
-            .from('reports')
-            .insert([{
-                station_id: parseInt(id),
-                fuel_type: fuelType,
-                status: status
-            }]);
+        // Obter status atual
+        const currentStatus = fuelType === 'gasoline' ? station.gasoline_status : station.diesel_status;
         
-        if (reportError) {
-            console.error('Erro ao adicionar report:', reportError);
-            throw reportError;
+        // Se o status ja e o mesmo, nao faz nada
+        if (currentStatus === status) {
+            console.log(`Status ja esta como ${status}, nao e necessario atualizar`);
+            return res.json({
+                success: true,
+                message: 'Status ja atualizado',
+                fuelType: fuelType,
+                status: currentStatus,
+                noChange: true
+            });
         }
         
-        // Calcular novo status para o combustivel
-        const fuelData = await calculateFuelStatus(parseInt(id), fuelType);
+        // Atualizar o status
+        const updateField = fuelType === 'gasoline' ? 'gasoline_status' : 'diesel_status';
+        const { error: updateError } = await supabase
+            .from('fuel_stations')
+            .update({ 
+                [updateField]: status,
+                updated_at: new Date()
+            })
+            .eq('id', parseInt(id));
         
-        console.log(`Report registrado! Novo status do ${fuelType}: ${fuelData.status}`);
+        if (updateError) {
+            console.error('Erro ao atualizar status:', updateError);
+            throw updateError;
+        }
+        
+        console.log(`Status do ${fuelType} atualizado de ${currentStatus} para ${status}`);
         
         res.json({
             success: true,
             fuelType: fuelType,
-            status: fuelData.status,
-            availableVotes: fuelData.availableVotes,
-            unavailableVotes: fuelData.unavailableVotes,
-            totalReports: fuelData.availableVotes + fuelData.unavailableVotes
+            status: status,
+            oldStatus: currentStatus,
+            changed: true
         });
     } catch (error) {
         console.error('Error reporting status:', error);
@@ -244,5 +175,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
     console.log(`Conectado ao Supabase`);
-    console.log(`API pronta para Gasolina e Diesel`);
+    console.log(`API otimizada - evita atualizacoes desnecessarias`);
 });
