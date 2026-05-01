@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Aumentar limite para fotos
 app.use(express.static(path.join(__dirname, 'public')));
 
 const supabase = createClient(
@@ -51,6 +51,7 @@ app.get('/api/stations', async (req, res) => {
                 status: generalStatus,
                 gasoline: gasolineStatus,
                 diesel: dieselStatus,
+                photo: station.photo || null,
                 lastUpdate: station.updated_at || station.created_at
             };
         });
@@ -62,52 +63,11 @@ app.get('/api/stations', async (req, res) => {
     }
 });
 
-// Rota para adicionar nova bomba
-app.post('/api/stations', async (req, res) => {
-    const { name, location, gasoline, diesel } = req.body;
-    
-    console.log('Adicionando novo posto:', { name, location, gasoline, diesel });
-    
-    try {
-        const { data: newStation, error: insertError } = await supabase
-            .from('fuel_stations')
-            .insert([{ 
-                name, 
-                location,
-                gasoline_status: gasoline || 'available',
-                diesel_status: diesel || 'available'
-            }])
-            .select()
-            .single();
-        
-        if (insertError) {
-            console.error('Erro ao inserir posto:', insertError);
-            throw insertError;
-        }
-        
-        console.log('Posto criado com ID:', newStation.id);
-        
-        res.status(201).json({
-            id: newStation.id,
-            name: newStation.name,
-            location: newStation.location,
-            gasoline: gasoline || 'available',
-            diesel: diesel || 'available',
-            status: 'available',
-            lastUpdate: new Date()
-        });
-    } catch (error) {
-        console.error('Error adding station:', error);
-        res.status(500).json({ error: 'Erro ao adicionar posto: ' + error.message });
-    }
-});
-
-
-// Rota para adicionar nova bomba (com suporte a foto)
+// Rota para adicionar nova bomba (COM suporte a foto)
 app.post('/api/stations', async (req, res) => {
     const { name, location, gasoline, diesel, photo } = req.body;
     
-    console.log('Adicionando novo posto:', { name, location, gasoline, diesel });
+    console.log('Adicionando novo posto:', { name, location, gasoline, diesel, hasPhoto: !!photo });
     
     try {
         const { data: newStation, error: insertError } = await supabase
