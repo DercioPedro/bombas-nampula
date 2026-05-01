@@ -228,38 +228,80 @@
             flex-wrap: wrap;
         }
 
-        .btn-gasoline {
-            flex: 1;
-            background: #f59e0b;
-            color: white;
-            padding: 8px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s ease;
-        }
+       /* Botões de Gasolina */
+.btn-gasoline {
+    flex: 1;
+    background: #f59e0b;
+    color: white;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
 
-        .btn-diesel {
-            flex: 1;
-            background: #0284c7;
-            color: white;
-            padding: 8px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s ease;
-        }
+/* Botão de Gasolina Indisponivel - VERMELHO */
+.btn-gasoline-unavailable {
+    flex: 1;
+    background: #dc2626;
+    color: white;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
 
-        .btn-gasoline:disabled,
-        .btn-diesel:disabled {
-            opacity: 0.6;
-            cursor: wait;
-            transform: none;
-        }
+/* Botões de Diesel */
+.btn-diesel {
+    flex: 1;
+    background: #0284c7;
+    color: white;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+/* Botão de Diesel Indisponivel - VERMELHO */
+.btn-diesel-unavailable {
+    flex: 1;
+    background: #dc2626;
+    color: white;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+/* Hover para todos os botões */
+.btn-gasoline:hover:not(:disabled),
+.btn-gasoline-unavailable:hover:not(:disabled),
+.btn-diesel:hover:not(:disabled),
+.btn-diesel-unavailable:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: scale(1.02);
+}
+
+/* Botões desabilitados */
+.btn-gasoline:disabled,
+.btn-gasoline-unavailable:disabled,
+.btn-diesel:disabled,
+.btn-diesel-unavailable:disabled {
+    opacity: 0.6;
+    cursor: wait;
+    transform: none;
+}
 
         button:hover:not(:disabled) {
             opacity: 0.9;
@@ -516,64 +558,63 @@
                 return;
             }
             
-            grid.innerHTML = filteredStations.map(station => {
-                const gasolineStatus = getStatusText(station.gasoline);
-                const dieselStatus = getStatusText(station.diesel);
-                const gasolineClass = getStatusClass(station.gasoline);
-                const dieselClass = getStatusClass(station.diesel);
-                
-                return `
-                    <div class="card" data-id="${station.id}">
-                        <div class="card-header">
-                            <div>
-                                <div class="station-name">${escapeHtml(station.name)}</div>
-                                <div class="station-location">Local: ${escapeHtml(station.location)}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="fuel-status">
-                            <div class="fuel-item fuel-gasoline">
-                                <strong>Gasolina:</strong><br>
-                                <span class="${gasolineClass}">${gasolineStatus}</span>
-                            </div>
-                            <div class="fuel-item fuel-diesel">
-                                <strong>Diesel:</strong><br>
-                                <span class="${dieselClass}">${dieselStatus}</span>
-                            </div>
-                        </div>
-                        
-                        <div class="last-update">
-                            Ultima atualizacao: ${getRelativeTime(station.lastUpdate)}
-                        </div>
-                        
-                        <div class="card-actions">
-                            <button class="btn-gasoline" 
-                                onclick="reportFuel(${station.id}, 'gasoline', 'available', this)"
-                                ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'Aguarde...' : 'Clique para Marcar Gasolina Disponivel'}
-                            </button>
-                            <button class="btn-gasoline" 
-                                onclick="reportFuel(${station.id}, 'gasoline', 'unavailable', this)"
-                                ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'Aguarde...' : 'Clique para Marcar Gasolina Indisponivel'}
-                            </button>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-diesel" 
-                                onclick="reportFuel(${station.id}, 'diesel', 'available', this)"
-                                ${disabledButtons.has(`diesel-${station.id}-available`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`diesel-${station.id}-available`) ? 'Aguarde...' : 'Clique para Marcar Diesel Disponivel'}
-                            </button>
-                            <button class="btn-diesel" 
-                                onclick="reportFuel(${station.id}, 'diesel', 'unavailable', this)"
-                                ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'disabled' : ''}>
-                                ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'Aguarde...' : 'Clique para Marcar Diesel Indisponivel'}
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
+           grid.innerHTML = filteredStations.map(station => {
+    const gasolineStatus = getStatusText(station.gasoline);
+    const dieselStatus = getStatusText(station.diesel);
+    const gasolineClass = getStatusClass(station.gasoline);
+    const dieselClass = getStatusClass(station.diesel);
+    
+    return `
+        <div class="card" data-id="${station.id}">
+            <div class="card-header">
+                <div>
+                    <div class="station-name">${escapeHtml(station.name)}</div>
+                    <div class="station-location">Local: ${escapeHtml(station.location)}</div>
+                </div>
+            </div>
+            
+            <div class="fuel-status">
+                <div class="fuel-item fuel-gasoline">
+                    <strong>Gasolina:</strong><br>
+                    <span class="${gasolineClass}">${gasolineStatus}</span>
+                </div>
+                <div class="fuel-item fuel-diesel">
+                    <strong>Diesel:</strong><br>
+                    <span class="${dieselClass}">${dieselStatus}</span>
+                </div>
+            </div>
+            
+            <div class="last-update">
+                Ultima atualizacao: ${getRelativeTime(station.lastUpdate)}
+            </div>
+            
+            <div class="card-actions">
+                <button class="btn-gasoline" 
+                    onclick="reportFuel(${station.id}, 'gasoline', 'available', this)"
+                    ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'disabled' : ''}>
+                    ${disabledButtons.has(`gasoline-${station.id}-available`) ? 'Aguarde...' : 'Clique para Marcar Gasolina Disponivel'}
+                </button>
+                <button class="btn-gasoline-unavailable" 
+                    onclick="reportFuel(${station.id}, 'gasoline', 'unavailable', this)"
+                    ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'disabled' : ''}>
+                    ${disabledButtons.has(`gasoline-${station.id}-unavailable`) ? 'Aguarde...' : 'Clique para Marcar Gasolina Indisponivel'}
+                </button>
+            </div>
+            <div class="card-actions">
+                <button class="btn-diesel" 
+                    onclick="reportFuel(${station.id}, 'diesel', 'available', this)"
+                    ${disabledButtons.has(`diesel-${station.id}-available`) ? 'disabled' : ''}>
+                    ${disabledButtons.has(`diesel-${station.id}-available`) ? 'Aguarde...' : 'Clique para Marcar Diesel Disponivel'}
+                </button>
+                <button class="btn-diesel-unavailable" 
+                    onclick="reportFuel(${station.id}, 'diesel', 'unavailable', this)"
+                    ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'disabled' : ''}>
+                    ${disabledButtons.has(`diesel-${station.id}-unavailable`) ? 'Aguarde...' : 'Clique para Marcar Diesel Indisponivel'}
+                </button>
+            </div>
+        </div>
+    `;
+}).join('');
 
         async function reportFuel(stationId, fuelType, status, buttonElement) {
             const buttonKey = `${fuelType}-${stationId}-${status}`;
